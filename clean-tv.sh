@@ -4,6 +4,8 @@
 # its restore record, and its launcher (built by this repo's GitHub Action).
 # Usage:  bash clean-tv.sh [TV_IP]
 set -u
+AUTO=0
+if [ "${1:-}" = --auto ]; then AUTO=1; shift; fi
 if [ "${1:-}" = --restore ]; then
   RESTORE=1; shift
 else RESTORE=0; fi
@@ -57,7 +59,8 @@ done
 if [ -n "$LIST" ]; then
   echo "Matched list: $LIST"
   sed -n '1,4p' "$LIST"
-  read -r -p "Use this list? [Y/n] " a; case "$a" in [Nn]*) LIST="";; esac
+  if [ "$AUTO" = 1 ]; then echo "(auto mode: using it)"; else
+    read -r -p "Use this list? [Y/n] " a; case "$a" in [Nn]*) LIST="";; esac; fi
 fi
 if [ -z "$LIST" ]; then
   echo "No exact list for this model. Lists for similar Google TVs:"
@@ -70,13 +73,26 @@ fi
 if [ -n "$LIST" ]; then
   say "Review: choose what to remove (Enter = yes, n = keep, a = yes to all the rest)"
   INSTALLED=$(tv 'pm list packages' | sed 's/^package://')
-  MY="my-debloat.txt"; : > "$MY"; ALL=0
+  MY="my-debloat.txt"; : > "$MY"; ALL=$AUTO
+  # Everyday apps and features that are never removed in auto mode: streaming apps, the Play Store,
+  # the remote's voice button, casting from phones, the on-screen keyboard and speech.
+  KEEP_DAILY=" com.google.android.youtube.tv com.google.android.youtube.tvunplugged com.netflix.ninja
+    com.amazon.amazonvideo.livingroom com.disney.disneyplus in.startv.hotstar in.startv.hotstar.dplus.tv
+    com.jio.media.stb.ondemand com.jio.jioplay.tv com.sonyliv com.graymatrix.did com.spotify.tv.android
+    com.apple.atve.androidtv.appletv com.hbo.hbonow com.plexapp.android com.android.vending
+    com.google.android.katniss com.google.android.apps.mediashell com.google.android.tts
+    com.google.android.leanback.ime com.google.android.inputmethod.latin com.google.android.tvkeyboard
+    com.google.android.tv.remote.service com.google.android.apps.tv.remote.service "
   while IFS= read -r line; do
     pkg=$(printf '%s' "$line" | sed 's/#.*//; s/[[:space:]]//g')
     if [ -z "$pkg" ] || ! printf '%s\n' "$INSTALLED" | grep -qxF "$pkg"; then printf '%s\n' "$line" >> "$MY"; continue; fi
     case "$pkg" in com.google.android.apps.tv.launcherx|com.google.android.tungsten.setupwraith)
       printf '%s\n' "$line" >> "$MY"; continue ;; esac   # needed for the new launcher to take over Home
     note=$(printf '%s' "$line" | sed -n 's/^[^#]*#[[:space:]]*//p')
+    if [ "$AUTO" = 1 ] && printf '%s' "$KEEP_DAILY" | tr -s ' \n' '\n\n' | grep -qxF "$pkg"; then
+      printf '# kept (daily use): %s\n' "$line" >> "$MY"; echo "  keeping  $pkg (daily use)"; continue
+    fi
+    [ "$AUTO" = 1 ] && echo "  removing $pkg${note:+  ($note)}"
     if [ "$ALL" = 1 ]; then ans=y; else
       read -r -p "  Remove $pkg${note:+  ($note)}? [Y/n/a] " ans </dev/tty; fi
     case "$ans" in [Nn]*) printf '# kept: %s\n' "$line" >> "$MY"; echo "    keeping";;
@@ -99,6 +115,8 @@ say "6/6 Installing the Clean Your TV launcher"
 # Second pass: anything the list skipped while the stock launcher still owned Home.
 [ -n "$LIST" ] && { bash tools/disable.sh "$LIST" || true; }
 tv 'pm trim-caches 999G' >/dev/null && echo "App caches cleared."
+# Snappier menus: halve the animation time (set back to 1 to undo).
+tv 'settings put global window_animation_scale 0.5; settings put global transition_animation_scale 0.5; settings put global animator_duration_scale 0.5' >/dev/null && echo "Animations sped up."
 
 say "ALL DONE"
-echo "Undo everything later with:  bash clean-tv.sh --restore   (or see README in $DIR)"
+echo "Undo everything later with:  bash clean.sh --restore   (or see README in $DIR)"
