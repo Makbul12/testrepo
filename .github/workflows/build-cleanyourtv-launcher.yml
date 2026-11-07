@@ -1,0 +1,47 @@
+# Builds the Clean Your TV launcher (github.com/Gathin23/cleanyourtv) from a pinned commit and
+# publishes the APK as a release, so clean-tv.sh can install it from a phone running Termux.
+name: Build Clean Your TV launcher
+
+on:
+  push:
+    branches: [claude/google-tv-bloatware-removal-yx9yti]
+    paths: [.github/workflows/build-cleanyourtv-launcher.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CYT_COMMIT: 3f175120f9802ab4364f61d040db9aa78ec71493
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Gathin23/cleanyourtv
+          ref: ${{ env.CYT_COMMIT }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - name: Build release APK
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/cleanyourtv-launcher.apk"
+          sha256sum "$GITHUB_WORKSPACE/cleanyourtv-launcher.apk" | tee "$GITHUB_WORKSPACE/cleanyourtv-launcher.apk.sha256"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete cleanyourtv-launcher -y --cleanup-tag -R "$GITHUB_REPOSITORY" || true
+          gh release create cleanyourtv-launcher -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Clean Your TV launcher" \
+            --notes "Built from Gathin23/cleanyourtv@${CYT_COMMIT}. Install with clean-tv.sh." \
+            cleanyourtv-launcher.apk cleanyourtv-launcher.apk.sha256
