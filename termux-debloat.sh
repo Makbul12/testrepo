@@ -8,18 +8,18 @@ LAUNCHER=com.spocky.projengmenu   # Projectivy Launcher
 say() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 
 say "1/6 Installing adb in Termux (first run only)"
-command -v adb >/dev/null || { pkg update -y && pkg install -y android-tools; }
+command -v adb >/dev/null || { pkg update -y </dev/null; pkg install -y android-tools </dev/null; }
 
 say "2/6 Connecting to TV at $TV"
 adb disconnect "$TV" >/dev/null 2>&1
-adb connect "$TV"
+adb connect "$TV" </dev/null
 echo "If the TV shows 'Allow USB debugging?', tick 'Always allow' and press OK."
 for i in $(seq 1 30); do
   [ "$(adb -s "$TV" get-state 2>/dev/null)" = device ] && break
   sleep 2
 done
 [ "$(adb -s "$TV" get-state 2>/dev/null)" = device ] || { echo "Could not connect. Check USB debugging is ON and run again."; exit 1; }
-A() { adb -s "$TV" shell "$@" | tr -d '\r'; }
+A() { adb -s "$TV" shell "$@" </dev/null | tr -d '\r'; }
 echo "Connected to: $(A getprop ro.product.model)"
 echo "Storage before: $(A df -h /data | tail -1)"
 
