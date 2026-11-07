@@ -8,7 +8,12 @@ LAUNCHER=com.spocky.projengmenu   # Projectivy Launcher
 say() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 
 say "1/6 Installing adb in Termux (first run only)"
-command -v adb >/dev/null || { pkg update -y </dev/null; pkg install -y android-tools </dev/null; }
+if ! adb version >/dev/null 2>&1; then
+  # Full upgrade is required: a stale libc++ makes adb fail with "CANNOT LINK EXECUTABLE".
+  pkg upgrade -y -o Dpkg::Options::=--force-confnew </dev/null
+  pkg install -y android-tools </dev/null
+fi
+adb version >/dev/null 2>&1 || { echo "adb still not working. Run 'pkg upgrade' manually, then 'bash tv.sh' again."; exit 1; }
 
 say "2/6 Connecting to TV at $TV"
 adb disconnect "$TV" >/dev/null 2>&1
