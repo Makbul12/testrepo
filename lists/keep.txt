@@ -1,0 +1,14 @@
+# NEVER remove these. debloat.sh refuses to touch anything listed here.
+com.google.android.gms                    # Play Services (everything breaks)
+com.google.android.gsf                    # Google Services Framework
+com.android.vending                       # Play Store (needed to install the new launcher and to update apps)
+com.google.android.tv.remote.service      # Remote / phone-remote pairing
+com.android.providers.tv                  # TV input provider
+com.android.tv.settings                   # Settings app
+com.google.android.tungsten.setupwraith   # Setup wizard (launcher.sh only DISABLES it; never uninstall it)
+com.google.android.apps.tv.launcherx      # Stock launcher (launcher.sh only DISABLES it; never uninstall it)
+com.android.systemui
+com.android.shell
+com.google.android.webview
+com.google.android.packageinstaller
+com.google.android.permissioncontroller

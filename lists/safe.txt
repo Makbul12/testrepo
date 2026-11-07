@@ -1,0 +1,16 @@
+# SAFE to remove on Google TV. Nothing system-critical. Every removal can be undone with scripts/restore.sh.
+# Format: package  # description
+com.google.android.youtube.tvmusic        # YouTube Music
+com.google.android.youtube.tvkids         # YouTube Kids
+com.google.android.play.games             # Google Play Games
+com.google.android.apps.tv.dreamx         # Ambient mode / Google Photos screensaver
+com.android.dreams.basic                  # Basic screensaver
+com.android.dreams.phototable             # Photo screensaver
+com.google.android.feedback               # Feedback reporter
+com.google.android.marvin.talkback        # TalkBack (accessibility, remove only if unused)
+com.android.printspooler                  # Print service (TVs don't print)
+com.google.android.partnersetup           # Partner/OEM setup leftovers
+com.google.android.tvtutorials            # Tutorials
+com.google.android.tvrecommendations      # Home-screen recommendations (older builds)
+com.google.android.leanbacklauncher.recommendations  # Recommendations service
+com.google.android.apps.turbo             # Device Health Services
